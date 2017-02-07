@@ -1,0 +1,121 @@
+
+<html><!-- Mirrored from cinema.pixeltailgames.com/search.html by HTTrack Website Copier/3.x [XR&CO'2014], Sat, 13 Jun 2015 07:27:11 GMT --><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	
+	<title>Pony United Cinema - Video Search</title>
+	<meta name="description" content="Garry&#39;s Mod Cinema gamemode video search page.">
+	<meta name="keywords" content="garrysmod,cinema,video,search,youtube,vimeo,twitch,livestream,blip,reddit">
+	<meta name="author" content="Pony United Cinema">
+	<link href="./Cinema - Video Search_files/style.css" rel="stylesheet" type="text/css">
+</head>
+<body>
+	<nav>
+		<ul>
+			<li><a href="http://ponypals.nl/puc">Pony United Cinema</a></li>
+			<li><a href="http://ponypals.nl/puc/search" class="active">Video Search</a></li>
+			<li><a href="http://steamcommunity.com/groups/PonyUnitedCinema">SteamGroup</a></li>
+			<li><a href="http://ponypals.nl/puc/rules">Rules</a></li>
+			<li><a href="http://ponypals.nl/puc/admins">Admins</a></li>
+			<li><a href="http://ponypals.nl/puc/help">Help</a></li>
+		</ul>
+	</nav>
+	
+<script>
+		function submi() {
+			window.location.href = "https://www.youtube.com/results?search_query="+document.getElementById("ytsearch").value;
+		}
+		function cript(e) {
+		    if (e.keyCode == 13) {
+		       submi();
+		    }
+		}
+	</script>
+	
+	<div style="position:absolute;top:24px;left:0;right:0;bottom:0;">
+		<section id="content-container">
+
+			<h1>Share a video from one of the selected services (Only Youtube is working... sorry!</h1>
+
+			<div style="text-align:center;font-size:0;">
+
+				<service class="subtext" style="background-image:url(logos/youtube.png);" onclick="selectService(&#39;YouTube&#39;,&#39;http://www.youtube.com/&#39;);" onmouseover="hoverService();">YouTube</service>
+				
+				<service class="subtext" style="background-image:url(logos/vimeo.png);background-size:90%;" onclick="selectService(&#39;Vimeo&#39;,&#39;http://www.vimeo.com/&#39;);" onmouseover="hoverService();">Vimeo</service>
+
+				<service class="subtext" style="background-image:url(logos/twitch.png);" onclick="selectService(&#39;Twitch&#39;,&#39;http://www.twitch.tv/&#39;);" onmouseover="hoverService();">Twitch</service>
+
+				<service class="subtext" style="background-image:url(logos/livestream.png);" onclick="selectService(&#39;Livestream&#39;,&#39;http://www.livestream.com/guide/livetv&#39;);" onmouseover="hoverService();">Livestream</service>
+<br>
+				
+				<service class="subtext" style="background-image:url(logos/reddit.png);" onclick="selectService(&#39;Reddit/videos&#39;,&#39;http://www.reddit.com/r/videos/&#39;);" onmouseover="hoverService();">Videos</service>
+
+				<service class="subtext" style="background-image:url(logos/reddit.png);" onclick="selectService(&#39;Reddit/fullmoviesonyoutube&#39;,&#39;http://www.reddit.com/r/fullmoviesonyoutube/&#39;);" onmouseover="hoverService();">FullMoviesOnYouTube</service>
+				
+				<service class="subtext" style="background-image:url(logos/us.png);" onclick="selectService(&#39;Ustream&#39;,&#39;http://www.ustream.tv/explore/&#39;);" onmouseover="hoverService();">Ustream</service>
+
+				<service class="subtext" style="background-image:url(logos/drive.png);" onclick="selectService(&#39;Drive&#39;,&#39;https://www.drive.google.com/drive/&#39;);" onmouseover="hoverService();">Google Drive</service>
+<BR>
+				<br>
+				<h1>Youtube Quick Search</h1>
+				<input style="margin-left:20px;width:200px;" id="ytsearch" type="text" placeholder="YouTube Quick Search" onkeypress="cript(event)"><button onclick="submi()">Search</button>
+<br>
+<br>
+<h2></a>
+<br>
+<br>
+		
+
+	<script src="./Cinema - Video Search_files/ca-pub-2379812634366937.js"></script><script async="" src="./Cinema - Video Search_files/analytics.js"></script><script type="text/javascript">
+		// Navigation sounds
+		var hoverSound = new Audio('sounds/sound1.wav');
+		var selectSound = new Audio('sounds/sound2.wav');
+		
+		// Event called when a service is hovered
+		function hoverService() {
+			hoverSound.play();
+		}
+
+		// Event called when a service is selected
+		function selectService(name, url) {
+			selectSound.play();
+			
+			ga('send', 'event', 'services', 'visit', name);
+			setTimeout(function(){
+				window.location.href = url;
+			}, 600);
+		}
+
+		// Set a random tip on DOM load
+		document.addEventListener('DOMContentLoaded', function() {
+			var tips = [
+				'Need Help?<br />Check out the <a href="../help.html">\PonyPals Help Page</a>, <a href="http://google.nl">',
+				'Join our<br /><a href="http://steamcommunity.com/groups/PPCinema">Steam Group</a>',
+			];
+
+			return function() {
+				var node = document.getElementById('tip'),
+					tip = tips[Math.floor(Math.random() * tips.length)];
+
+				node.innerHTML = tip;
+			};
+		}());
+	</script>
+	
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-73360854-1', 'auto');
+  ga('send', 'pageview');
+
+</script>
+
+</script><ins id="aswift_0_expand" style="display:inline-table;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent"><ins id="aswift_0_anchor" style="display:block;border:none;height:90px;margin:0;padding:0;position:relative;visibility:visible;width:728px;background-color:transparent"><iframe width="728" height="90" frameborder="0" marginwidth="0" marginheight="0" vspace="0" hspace="0" allowtransparency="true" scrolling="no" allowfullscreen="true" onload="var i=this.id,s=window.google_iframe_oncopy,H=s&amp;&amp;s.handlers,h=H&amp;&amp;H[i],w=this.contentWindow,d;try{d=w.document}catch(e){}if(h&amp;&amp;d&amp;&amp;(!d.body||!d.body.firstChild)){if(h.call){setTimeout(h,0)}else if(h.match){try{h=s.upd(h,i)}catch(e){}w.location.replace(h)}}" id="aswift_0" name="aswift_0" style="left:0;position:absolute;top:0;"></iframe></ins></ins>
+
+</h2></div></section>
+	</div>
+
+	<link href="./Cinema - Video Search_files/css" rel="stylesheet" type="text/css">
+
+</body></html>
