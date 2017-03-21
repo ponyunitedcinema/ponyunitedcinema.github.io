@@ -108,7 +108,8 @@ background-image: url(../images/background.jpg);
 }
 
 .info {
-	font-size: 18pt;
+	background-color:  rgba(241,111,92,0.51);
+	font-size: 28pt;
 	text-shadow: 0px 2px 1px rgba(0,0,0,1), 1px 1px 1px rgba(0,0,0,0.2), -1px 1px 1px rgba(0,0,0,0.2);
 	text-align: center;
 	line-height: 22pt;
