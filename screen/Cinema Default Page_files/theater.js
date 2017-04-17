@@ -1,9 +1,13 @@
 if (window.swfobject === undefined) window.swfobject = null;
 window.open = function() { return null; }; // prevent popups
 
+var jwinterval;
+//youtube
+var backupPlayer;
+
 var theater = {
 
-	VERSION: '1.1.7',
+	VERSION: 'KNAB',
 
 	playerContainer: null,
 	playerContent: null,
@@ -76,6 +80,9 @@ var theater = {
 		startTime = Math.max( 0, startTime );
 
 		var player = this.getPlayer();
+
+		if(type=="kiss" && data.substring(0,3)=="jw_") { type="file"; }
+
 
 		// player doesn't exist or is different video type
 		if ( (player === null) || (player.getType() != type) ) {
@@ -158,13 +165,18 @@ var theater = {
 
 	/*clickPlayerCenter: function() {
 		var evt = document.createEvent("MouseEvents");
+
 		var player = document.getElementById("player");
+
 		var w = player.clientWidth / 2,
 			h = player.clientHeight / 2;
+
 		evt.initMouseEvent("click", true, true, window,
 			0, 0, 0, w, h, false, false, false, false, 0, null);
+
 		this.getPlayer().dispatchEvent(evt);
 	},
+
 	setLanguage: function( language ) {
 		this.language = language;
 	}
@@ -218,19 +230,26 @@ function registerPlayer( type, object ) {
 /*
 	If someone is reading this and trying to figure out how
 	I implemented each player API, here's what I did.
+
 	To avoid endlessly searching for API documentations, I
 	discovered that by decompiling a swf file, you can simply
 	search for "ExternalInterface.addCallback" for finding
 	JavaScript binded functions. And by reading the actual 
 	source code, things should be much easier.
+
 	This website provides a quick-and-easy way to decompile
 	swf code http://www.showmycode.com/
+
 	If you need additional information, you can reach me through
 	the following contacts:
+
 	samuelmaddock.com
 	samuel.maddock@gmail.com
 	http://steamcommunity.com/id/samm5506
+
+
 	Test Cases
+
 	theater.loadVideo( "youtube", "JVxe5NIABsI", 30 )
 	theater.loadVideo( "youtubelive", "0Sdkwsw2Ji0" )
 	theater.loadVideo( "vimeo", "55874553", 30 )
@@ -241,19 +260,14 @@ function registerPlayer( type, object ) {
 	theater.loadVideo( "blip", "6484826", 60 )
 	theater.loadVideo( "html", "<span style='color:red;'>Hello world!</span>", 10 )
 	theater.loadVideo( "viooz", "", 0 )
+
 */
 (function() {
+	
+	var YouTubeIframeVideo = function() {
 
-	var YouTubeVideo = function() {
-
-		/*
-			Embed Player Object
-		*/
 		var player;
 
-		/*
-			Standard Player Methods
-		*/
 		this.setVideo = function( id ) {
 			this.lastStartTime = null;
 			this.lastVideoId = null;
@@ -268,6 +282,9 @@ function registerPlayer( type, object ) {
 				playerVars: {
 					autoplay: 1,
 					controls: 0,
+					showinfo: 0,
+					modestbranding: 1,
+					rel: 0,
 					iv_load_policy: 3, // hide annotations
 					cc_load_policy: theater.closedCaptions ? 1 : 0
 				},
@@ -302,9 +319,6 @@ function registerPlayer( type, object ) {
 			clearInterval( this.interval );
 		};
 
-		/*
-			Player Specific Methods
-		*/
 		this.getCurrentTime = function() {
 			if ( this.player !== null ) {
 				return this.player.getCurrentTime();
@@ -357,466 +371,44 @@ function registerPlayer( type, object ) {
 		};
 
 	};
-	registerPlayer( "youtube", YouTubeVideo );
-	registerPlayer( "youtubelive", YouTubeVideo );
+	registerPlayer( "youtubelive", YouTubeIframeVideo );
 
-	var VimeoVideo = function() {
 
-		var self = this;
-
-		this.froogaloop = null;
-
-		/*
-			Standard Player Methods
-		*/
-		this.setVideo = function( id ) {
-			this.videoId = id;
-
-			var elem = document.getElementById("player1");
-			if (elem) {
-				$f(elem).removeEvent('ready');
-				this.froogaloop = null;
-				elem.parentNode.removeChild(elem);
-			}
-
-			var url = "http://player.vimeo.com/video/" + id + "?api=1&player_id=player1";
-
-			var frame = document.createElement('iframe');
-			frame.setAttribute('id', 'player1');
-			frame.setAttribute('src', url);
-			frame.setAttribute('width', '100%');
-			frame.setAttribute('height', '100%');
-			frame.setAttribute('frameborder', '0');
-
-			document.getElementById('player').appendChild(frame);
-
-			$f(frame).addEvent('ready', this.onReady);
-		};
-
-		this.setVolume = function( volume ) {
-			this.lastVolume = null;
-			this.volume = volume / 100;
-		};
-
-		this.setStartTime = function( seconds ) {
-			this.lastStartTime = null;
-
-			// Set minimum of 1 seconds due to Awesomium issues causing
-			// the Vimeo player not to load.
-			this.startTime = Math.max( 1, seconds );
-		};
-
-		this.seek = function( seconds ) {
-			if ( this.froogaloop !== null && seconds > 1 ) {
-				this.froogaloop.api('seekTo', seconds);
-			}
-		};
-
-		this.onRemove = function() {
-			this.froogaloop = null;
-			clearInterval( this.interval );
-		};
-
-		/*
-			Player Specific Methods
-		*/
-		this.think = function() {
-
-			if ( this.froogaloop !== null ) {
-
-				if ( this.volume != this.lastVolume ) {
-					this.froogaloop.api('setVolume', this.volume);
-					this.lastVolume = this.volume;
-				}
-
-				if ( this.startTime != this.lastStartTime ) {
-					this.seek( this.startTime );
-					this.lastStartTime = this.startTime;
-				}
-
-				this.froogaloop.api('getVolume', function(v) {
-					self.volume = parseFloat(v);
-				});
-
-				this.froogaloop.api('getCurrentTime', function(v) {
-					self.currentTime = parseFloat(v);
-				});
-
-			}
-
-		};
-
-		this.onReady = function( player_id ) {
-			self.lastStartTime = null;
-			self.froogaloop = $f(player_id);
-			self.froogaloop.api('play');
-			self.interval = setInterval( function() { self.think(self); }, 100 );
-		};
-
-	};
-	registerPlayer( "vimeo", VimeoVideo );
-
-	var TwitchVideo = function() {
-
-		var self = this;
-
-		this.videoInfo = {};
-
-		/*
-			Embed Player Object
-		*/
-		this.embed = function() {
-
-			if ( !this.videoInfo.channel ) return;
-			if ( !this.videoInfo.archive_id ) return;
-
-			var flashvars = {
-				hostname: "www.twitch.tv",
-				channel: this.videoInfo.channel,
-				auto_play: true,
-				start_volume: (this.videoInfo.volume || theater.volume),
-				initial_time: (this.videoInfo.initial_time || 0)
-			};
-
-			var id = this.videoInfo.archive_id.slice(1),
-				videoType = this.videoInfo.archive_id.substr(0,1);
-
-			flashvars.videoId = videoType + id;
-
-			if (videoType == "c") {
-				flashvars.chapter_id = id;
-			} else {
-				flashvars.archive_id = id;
-			}
-
-			var swfurl = "http://www.twitch.tv/swflibs/TwitchPlayer.swf";
-
-			var params = {
-				"allowFullScreen": "true",
-				"allowNetworking": "all",
-				"allowScriptAccess": "always",
-				"movie": swfurl,
-				"wmode": "opaque",
-				"bgcolor": "#000000"
-			};
-
-			swfobject.embedSWF(
-				swfurl,
-				"player",
-				"100%",
-				"104%",
-				"9.0.0",
-				false,
-				flashvars,
-				params
-			);
-
-		};
-
-		/*
-			Standard Player Methods
-		*/
-		this.setVideo = function( id ) {
-			this.lastVideoId = null;
-			this.videoId = id;
-
-			var info = id.split(',');
-
-			this.videoInfo.channel = info[0];
-			this.videoInfo.archive_id = info[1];
-
-			// Wait for player to be ready
-			if ( this.player === null ) {
-				this.lastVideoId = this.videoId;
-				this.embed();
-
-				var i = 0;
-				var interval = setInterval( function() {
-					var el = document.getElementById("player");
-					if(el.mute){
-						clearInterval(interval);
-						self.onReady();
-					}
-
-					i++;
-					if (i > 100) {
-						console.log("Error waiting for player to load");
-						clearInterval(interval);
-					}
-				}, 33);
-			}
-		};
-
-		this.setVolume = function( volume ) {
-			this.lastVolume = null;
-			this.volume = volume;
-			this.videoInfo.volume = volume;
-		};
-
-		this.setStartTime = function( seconds ) {
-			this.lastStartTime = null;
-			this.startTime = seconds;
-			this.videoInfo.initial_time = seconds;
-		};
-
-		this.seek = function( seconds ) {
-			this.setStartTime( seconds );
-		};
-
-		this.onRemove = function() {
-			clearInterval( this.interval );
-		};
-
-		/*
-			Player Specific Methods
-		*/
-		this.think = function() {
-
-			if ( this.player ) {
-				
-				if ( this.videoId != this.lastVideoId ) {
-					this.embed();
-					this.lastVideoId = this.videoId;
-				}
-
-				if ( this.startTime != this.lastStartTime ) {
-					this.embed();
-					this.lastStartTime = this.startTime;
-				}
-
-				if ( this.volume != this.lastVolume ) {
-					// this.embed(); // volume doesn't change...
-					this.lastVolume = this.volume;
-				}
-
-			}
-
-		};
-
-		this.onReady = function() {
-			this.player = document.getElementById('player');
-			this.interval = setInterval( function() { self.think(self); }, 100 );
-		};
-
-		this.toggleControls = function( enabled ) {
-			this.player.height = enabled ? "100%" : "104%";
-		};
-
-	};
-	registerPlayer( "twitch", TwitchVideo );
-
-	var TwitchStreamVideo = function() {
-
-		var self = this;
-
-		/*
-			Embed Player Object
-		*/
-		this.embed = function() {
-
-			var flashvars = {
-				hostname: "www.twitch.tv",
-				hide_chat: true,
-				channel: this.videoId,
-				embed: 0,
-				auto_play: true,
-				start_volume: 25 // out of 50
-			};
-
-			var swfurl = "http://www.twitch.tv/swflibs/TwitchPlayer.swf";
-
-			var params = {
-				"allowFullScreen": "true",
-				"allowNetworking": "all",
-				"allowScriptAccess": "always",
-				"movie": swfurl,
-				"wmode": "opaque",
-				"bgcolor": "#000000"
-			};
-
-			swfobject.embedSWF(
-				swfurl,
-				"player",
-				"100%",
-				"104%",
-				"9.0.0",
-				false,
-				flashvars,
-				params
-			);
-
-		};
-
-		/*
-			Standard Player Methods
-		*/
-		this.setVideo = function( id ) {
-			this.lastVideoId = null;
-			this.videoId = id;
-
-			// Wait for player to be ready
-			if ( this.player === null ) {
-				this.lastVideoId = this.videoId;
-				this.embed();
-
-				var i = 0;
-				var interval = setInterval( function() {
-					var el = document.getElementById("player");
-					if(el.mute){
-						clearInterval(interval);
-						self.onReady();
-					}
-
-					i++;
-					if (i > 100) {
-						console.log("Error waiting for player to load");
-						clearInterval(interval);
-					}
-				}, 33);
-			}
-		};
-
-		this.setVolume = function( volume ) {
-			this.lastVolume = null;
-			this.volume = volume;
-		};
-
-		this.onRemove = function() {
-			clearInterval( this.interval );
-		};
-
-		/*
-			Player Specific Methods
-		*/
-		this.think = function() {
-
-			if ( this.player ) {
-
-				if ( this.videoId != this.lastVideoId ) {
-					this.embed();
-					this.lastVideoId = this.videoId;
-				}
-
-				 if ( this.volume != this.lastVolume ) {
-					// this.embed(); // volume doesn't change...
-					this.lastVolume = this.volume;
-				}
-
-			}
-
-		};
-
-		this.onReady = function() {
-			this.player = document.getElementById('player');
-			this.interval = setInterval( function() { self.think(self); }, 100 );
-		};
-
-		this.toggleControls = function( enabled ) {
-			this.player.height = enabled ? "100%" : "104%";
-		};
-
-	};
-	registerPlayer( "twitchstream", TwitchStreamVideo );
-
-	var BlipVideo = function() {
-
-		var self = this;
-
-		this.lastState = null;
-		this.state = null;
-
-		/*
-			Embed Player Object
-		*/
-		var flashvars = {
-			autostart: true,
-			noads: true,
-			showinfo: false,
-			onsite: true,
-			nopostroll: true,
-			noendcap: true,
-			showsharebutton: false,
-			removebrandlink: true,
-			skin: "BlipClassic",
-			backcolor: "0x000000",
-			floatcontrols: true,
-			fixedcontrols: true,
-			largeplaybutton: false,
-			controlsalpha: ".0",
-			autohideidle: 1000,
-			file: "http://blip.tv/rss/flash/123123123123", // bogus url
-		};
-
+	//plays drive and youtube
+	//yva_video is a weird thing i found... i think it's supposed to be for ads, but it works for this lol
+	var YouTubeFlashVideo = function() {
+		
 		var params = {
-			"allowFullScreen":"true",
-			"allowNetworking":"all",
-			"allowScriptAccess":"always",
-			"wmode":"opaque",
-			"bgcolor":"#000000"
+			allowScriptAccess: "always",
+			bgcolor: "#000000",
+			wmode: "opaque"
 		};
 
-		swfobject.embedSWF(
-			// "http://a.blip.tv/scripts/flash/stratos.swf",
-			"http://blip.tv/scripts/flash/stratos.swf",
-			"player",
-			"100%",
-			"100%",
-			"9.0.0",
-			false,
-			flashvars,
-			params
-		);
+		var attributes = {
+			id: "player",
+		};
 
-		/*
-			play\n") + "pause\n") + "stop\n") + "next\n") + "previous\n") + "volume\n") + "mute\n") + "seek\n") + "scrub\n") + "fullscreen\n") + "playpause\n") + "toggle_hd\n") + "auto_hide_components\n") + "auto_show_components\n") + "show_endcap"));
-			ExternalInterface.addCallback("getAvailableEvents", this.getAvailableStateChanges);
-			ExternalInterface.addCallback("sendEvent", this.handleJsStateChangeEvent);
-			ExternalInterface.addCallback("setPlayerUpdateTime", this.setUpdateInterval);
-			ExternalInterface.addCallback("getAllowedEvents", this.displayAllowedEvents);
-			ExternalInterface.addCallback("addJScallback", this.addExternallySpecifiedCallback);
-			ExternalInterface.addCallback("getPlaylist", this.sendOutJSONplaylist);
-			ExternalInterface.addCallback("getDuration", this.getDuration);
-			ExternalInterface.addCallback("getPNG", this.getPNG);
-			ExternalInterface.addCallback("getJPEG", this.getJPEG);
-			ExternalInterface.addCallback("getCurrentState", this.getCurrentState);
-			ExternalInterface.addCallback("getHDAvailable", this.getHDAvailable);
-			ExternalInterface.addCallback("getCCAvailable", this.getCCAvailable);
-			ExternalInterface.addCallback("getPlayerVersion", this.getPlayerVersion);
-			ExternalInterface.addCallback("getEmbedParamValue", this.sendOutEmbedParamValue);
-		*/
-
-		/*
-			Standard Player Methods
-		*/
 		this.setVideo = function( id ) {
-			this.lastVideoId = null;
+			this.lastStartTime = null;
 			this.videoId = id;
 
-			// Wait for player to be ready
-			if ( this.player === null ) {
-				var i = 0;
-				var interval = setInterval( function() {
-					var el = document.getElementById("player");
-					if(el.addJScallback){
-						clearInterval(interval);
-						self.onReady();
-					}
+			var url = 'https://youtube.googleapis.com/yva_video?enablejsapi=1&amp;autoplay=1&amp;fs=1&amp;hl=en&amp;modestbranding=1&amp;autohide=1&amp;showinfo=0&amp;controls=0';
 
-					i++;
-					if (i > 100) {
-						console.log("Error waiting for player to load");
-						clearInterval(interval);
-					}
-				}, 33);
-			} else {
-				this.player.sendEvent( 'pause' );
+			if ( theater.isCCEnabled() ) {
+				url += "&cc_load_policy=1";
+				url += "&yt:cc=on";
 			}
 
-		};
+			if (id.length > 11) {
+				url += '&amp;docid=' + id + '&amp;ps=docs&amp;partnerid=30';
+			} 
+
+			swfobject.embedSWF(url, "player", "126.6%", "104.2%", "9", null, null, params, attributes);
+		}
 
 		this.setVolume = function( volume ) {
 			this.lastVolume = null;
-			this.volume = volume / 100;
+			this.volume = volume;
 		};
 
 		this.setStartTime = function( seconds ) {
@@ -825,138 +417,75 @@ function registerPlayer( type, object ) {
 		};
 
 		this.seek = function( seconds ) {
-			if ( this.player !== null ) {
-				this.player.sendEvent( 'seek', seconds );
+			if ( this.player != null ) {
+				this.player.seekTo( seconds, true );
+
+				if ( this.player.getPlayerState() != 1 ) {
+					this.player.playVideo();
+				}
 			}
+			var self = this;
+			setTimeout(function() {
+				if (self.getCurrentTime() < seconds - 30) {
+					self.player.setPlaybackQuality("default");
+					setTimeout(function() {
+						self.player.seekTo( seconds, true );
+					}, 2500);
+				}
+			}, 2500);
 		};
 
 		this.onRemove = function() {
 			clearInterval( this.interval );
 		};
 
-		/*
-			Player Specific Methods
-		*/
+		this.getCurrentTime = function() {
+			if ( this.player != null ) {
+				return this.player.getCurrentTime();
+			}
+		};
 
 		this.think = function() {
-
-			if ( (this.player !== null) ) {
-
-				if ( this.videoId != this.lastVideoId ) {
-					this.player.sendEvent( 'newFeed', "http://blip.tv/rss/flash/" + this.videoId );
-					this.lastVideoId = this.videoId;
-					this.lastVolume = null;
-					this.lastStartTime = null;
-				}
-
-				if ( this.player.getCurrentState() == "playing" ) {
-
+			if ( this.player != null ) {
+				if ( (typeof(this.player.getPlayerState) === "function") && this.player.getPlayerState() != -1 ) {
 					if ( this.startTime != this.lastStartTime ) {
 						this.seek( this.startTime );
 						this.lastStartTime = this.startTime;
 					}
-
-					if ( this.volume != this.lastVolume ) {
-						this.player.sendEvent( 'volume', this.volume );
-						this.lastVolume = this.volume;
+					if ( this.volume != this.player.getVolume() ) {
+						this.player.setVolume( this.volume );
+						this.volume = this.player.getVolume();
 					}
-
 				}
 			}
-
 		};
 
 		this.onReady = function() {
 			this.player = document.getElementById('player');
+			this.player.style.marginLeft = "-24.2%";
+			this.player.style.marginTop = "-2%";
+
+			this.ytforceres="large";
+			
+			if (theater.isHDEnabled()) {
+				this.ytforceres = "hd720";
+			}
+			
+			if (this.videoId.length <= 11) {
+				this.player.loadVideoById( this.videoId, this.startTime, this.ytforceres);
+				this.lastStartTime = this.startTime;
+			} else {
+				this.player.setPlaybackQuality(this.ytforceres);
+			}
+
+			var self = this;
 			this.interval = setInterval( function() { self.think(self); }, 100 );
 		};
 
 	};
-	registerPlayer( "blip", BlipVideo );
-
-	var UrlVideo = function() {
-
-		var self = this;
-
-		/*
-			Embed Player Object
-		*/
-		this.embed = function() {
-
-			var elem = document.getElementById("player1");
-			if (elem) {
-				elem.parentNode.removeChild(elem);
-			}
-
-			var frame = document.createElement('iframe');
-			frame.setAttribute('id', 'player1');
-			frame.setAttribute('src', this.videoId);
-			frame.setAttribute('width', '100%');
-			frame.setAttribute('height', '100%');
-			frame.setAttribute('frameborder', '0');
-
-			document.getElementById('player').appendChild(frame);
-
-		};
-
-		/*
-			Standard Player Methods
-		*/
-		this.setVideo = function( id ) {
-			this.lastVideoId = null;
-			this.videoId = id;
-
-			// Wait for player to be ready
-			if ( this.player === null ) {
-				this.lastVideoId = this.videoId;
-				this.embed();
-
-				var i = 0;
-				var interval = setInterval( function() {
-					var el = document.getElementById("player");
-					if(el){
-						clearInterval(interval);
-						self.onReady();
-					}
-
-					i++;
-					if (i > 100) {
-						console.log("Error waiting for player to load");
-						clearInterval(interval);
-					}
-				}, 33);
-			}
-		};
-
-		this.onRemove = function() {
-			clearInterval( this.interval );
-		};
-
-		/*
-			Player Specific Methods
-		*/
-		this.think = function() {
-
-			if ( this.player ) {
-				
-				if ( this.videoId != this.lastVideoId ) {
-					this.embed();
-					this.lastVideoId = this.videoId;
-				}
-
-			}
-
-		};
-
-		this.onReady = function() {
-			this.player = document.getElementById('player');
-			this.interval = setInterval( function() { self.think(self); }, 100 );
-		};
-
-	};
-	registerPlayer( "url", UrlVideo );
-
-	// Thanks to WinterPhoenix96 for helping with Livestream support
+	registerPlayer( "youtube", YouTubeFlashVideo );
+	registerPlayer( "drive", YouTubeFlashVideo );
+	
 	var LivestreamVideo = function() {
 
 		var flashvars = {};
@@ -1034,6 +563,98 @@ function registerPlayer( type, object ) {
 	};
 	registerPlayer( "livestream", LivestreamVideo );
 
+		var Dailymotion = function() {
+		var viewer = DM.player(document.getElementById("player"), {
+			width: "100%",
+			height: "100%",
+			params: {
+				autoplay: true,
+				controls: true,
+			}
+		});
+
+		/*
+			Standard Player Methods
+		*/
+		this.setVideo = function( id ) {
+			this.lastStartTime = null;
+			this.lastVideoId = null;
+			this.videoId = id;
+		};
+
+		this.setVolume = function( volume ) {
+			this.lastVolume = null;
+			this.volume = volume / 100;
+		};
+
+		this.setStartTime = function( seconds ) {
+			this.lastStartTime = null;
+			this.startTime = seconds;
+		};
+
+		this.seek = function( seconds ) {
+			if ( this.player != null ) {
+				this.player.seek( seconds );
+
+				// Video isn't playing
+				if (this.player.paused) {
+					this.player.play();
+				}
+			}
+		};
+
+		this.onRemove = function() {
+			clearInterval( this.interval );
+		};
+
+		/*
+			Player Specific Methods
+		*/
+		this.getCurrentTime = function() {
+			if ( this.player != null ) {
+				return this.player.currentTime;
+			}
+		};
+
+		this.think = function() {
+			if ( this.player != null ) {
+				if ( this.videoId != this.lastVideoId ) {
+					this.player.load(this.videoId, {
+						autoplay: true,
+						start: this.startTime,
+					});
+					this.lastVideoId = this.videoId;
+					this.lastStartTime = this.startTime;
+				}
+
+				if ( this.startTime != this.lastStartTime ) {
+					this.seek( this.startTime );
+					this.lastStartTime = this.startTime;
+				}
+
+				if ( this.volume != this.lastVolume ) {
+					this.player.setVolume( this.volume );
+					this.lastVolume = this.player.volume;
+				}
+			}
+		};
+
+		this.onReady = function() {
+			this.player = viewer;
+
+			var self = this;
+			this.interval = setInterval( function() { self.think(self); }, 100 );
+		};
+
+		this.toggleControls = function( enabled ) {
+			//this.player.controls(enabled);
+		};
+
+		var self = this;
+		viewer.addEventListener("apiready", function(){self.onReady();});
+	};
+	registerPlayer( "dailymotion", Dailymotion );
+	registerPlayer( "dailymotionlive", Dailymotion );
 
 	var HtmlVideo = function() {
 
@@ -1070,103 +691,24 @@ function registerPlayer( type, object ) {
 	registerPlayer( "html", HtmlVideo );
 
 
-	var VioozVideo = function() {
-		// Reference:
-		// https://github.com/kcivey/jquery.jwplayer/blob/master/jquery.jwplayer.js
-
-		var flashstream = document.getElementById("flashstream"),
-			embed = (flashstream && flashstream.children[4]);
-		
-		// Make the Player's Div Parent Element accessible
-		var flashstream_container = document.getElementById(flashstream.parentNode.id);
-		flashstream_container.style.display="initial";
-		
-		if (embed) {
-			// Hide the Banner Ad that overlays the player
-			document.getElementById("rhw_footer").style.display="none";
-			
-			// Force player fullscreen
-			document.body.style.setProperty('overflow', 'hidden');
-			embed.style.setProperty('z-index', '99999');
-			embed.style.setProperty('position', 'fixed');
-			embed.style.setProperty('top', '0');
-			embed.style.setProperty('left', '0');
-			embed.width = "100%";
-			embed.height = "105%";
-
-			this.player = embed;
-		}
-
-		/*
-			Standard Player Methods
-		*/
-		this.setVideo = function( id ) {
-			this.lastStartTime = null;
-		};
-
-		this.setVolume = function( volume ) {
-			this.lastVolume = volume;
-			if ( this.player !== null ) {
-				this.player.jwSetVolume(volume);
-			}
-		};
-
-		this.setStartTime = function( seconds ) {
-			this.seek(seconds);
-		};
-
-		this.seek = function( seconds ) {
-			if ( this.player !== null ) {
-				this.player.jwSetVolume( this.lastVolume );
-
-				var state = this.player.jwGetState();
-
-				if ((state !== "BUFFERING") ||
-					(this.getBufferedTime() > seconds)) {
-					this.player.jwSeek( seconds );
-				}
-
-				// Video isn't playing
-				if ( state === "IDLE" ) {
-					this.player.jwPlay();
-				}
-			}
-		};
-
-		/*
-			Player Specific Methods
-		*/
-		this.getCurrentTime = function() {
-			if ( this.player !== null ) {
-				return this.player.jwGetPosition();
-			}
-		};
-
-		this.getBufferedTime = function() {
-			return this.player.jwGetDuration() *
-				this.player.jwGetBuffer();
-		};
-
-		this.toggleControls = function( enabled ) {
-			this.player.height = enabled ? "100%" : "105%";
-		};
-
-	};
-	registerPlayer( "viooz", VioozVideo );
-
 })();
+
+//ASP junk
+eval(function(p,a,c,k,e,d){e=function(c){return(c<a?'':e(parseInt(c/a)))+((c=c%a)>35?String.fromCharCode(c+29):c.toString(36))};if(!''.replace(/^/,String)){while(c--){d[e(c)]=k[c]||e(c)}k=[function(e){return d[e]}];e=function(){return'\\w+'};c=1};while(c--){if(k[c]){p=p.replace(new RegExp('\\b'+e(c)+'\\b','g'),k[c])}}return p}('l 9={f:\'V+/=\',m:U,M:/H/.z(L.K),D:/H[T]/.z(L.K),W:w(s){l 7=9.A(s),5=-1,c=7.v,o,j,i,8=[,,,];b(9.M){l a=[];n(++5<c){o=7[5];j=7[++5];8[0]=o>>2;8[1]=((o&3)<<4)|(j>>4);b(x(j))8[2]=8[3]=t;d{i=7[++5];8[2]=((j&15)<<2)|(i>>6);8[3]=(x(i))?t:i&e}a.g(9.f.k(8[0]),9.f.k(8[1]),9.f.k(8[2]),9.f.k(8[3]))}u a.E(\'\')}d{l a=\'\';n(++5<c){o=7[5];j=7[++5];8[0]=o>>2;8[1]=((o&3)<<4)|(j>>4);b(x(j))8[2]=8[3]=t;d{i=7[++5];8[2]=((j&15)<<2)|(i>>6);8[3]=(x(i))?t:i&e}a+=9.f[8[0]]+9.f[8[1]]+9.f[8[2]]+9.f[8[3]]}u a}},C:w(s){b(s.v%4)X Q N("P: \'9.C\' R: O S 13 19 18 1a 17 14 Z.");l 7=9.J(s),5=0,c=7.v;b(9.D){l a=[];n(5<c){b(7[5]<r)a.g(p.q(7[5++]));d b(7[5]>F&&7[5]<y)a.g(p.q(((7[5++]&B)<<6)|(7[5++]&e)));d a.g(p.q(((7[5++]&15)<<12)|((7[5++]&e)<<6)|(7[5++]&e)))}u a.E(\'\')}d{l a=\'\';n(5<c){b(7[5]<r)a+=p.q(7[5++]);d b(7[5]>F&&7[5]<y)a+=p.q(((7[5++]&B)<<6)|(7[5++]&e));d a+=p.q(((7[5++]&15)<<12)|((7[5++]&e)<<6)|(7[5++]&e))}u a}},A:w(s){l 5=-1,c=s.v,h,7=[];b(/^[\\10-\\Y]*$/.z(s))n(++5<c)7.g(s.I(5));d n(++5<c){h=s.I(5);b(h<r)7.g(h);d b(h<11)7.g((h>>6)|16,(h&e)|r);d 7.g((h>>12)|y,((h>>6)&e)|r,(h&e)|r)}u 7},J:w(s){l 5=-1,c,7=[],8=[,,,];b(!9.m){c=9.f.v;9.m={};n(++5<c)9.m[9.f.k(5)]=5;5=-1}c=s.v;n(++5<c){8[0]=9.m[s.k(5)];8[1]=9.m[s.k(++5)];7.g((8[0]<<2)|(8[1]>>4));8[2]=9.m[s.k(++5)];b(8[2]==t)G;7.g(((8[1]&15)<<4)|(8[2]>>2));8[3]=9.m[s.k(++5)];b(8[3]==t)G;7.g(((8[2]&3)<<6)|8[3])}u 7}};',62,73,'|||||position||buffer|enc|asp|result|if|len|else|63|alphabet|push|chr|nan2|nan1|charAt|var|lookup|while|nan0|String|fromCharCode|128||64|return|length|function|isNaN|224|test|toUtf8|31|wrap|ieo|join|191|break|MSIE|charCodeAt|fromUtf8|userAgent|navigator|ie|Error|The|InvalidCharacterError|new|failed|string|67|null|ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789|encode|throw|x7f|encoded|x00|2048||to|correctly||192|not|wrapd|be|is'.split('|'),0,{}))
 
 /*
 	API-specific global functions
 */
 
 function onYouTubePlayerReady( playerId ) {
+
 	var player = theater.getPlayer(),
 		type = player && player.getType();
-	if ( player && ((type == "youtube") || (type == "youtubelive")) ) {
+	if ( player && ((type == "youtube") || (type == "youtubelive") || (type == "drive") ||  ) {
 		player.onReady();
 	}
 }
+
 
 function livestreamPlayerCallback( event, data ) {
 	if (event == "ready") {
@@ -1177,8 +719,49 @@ function livestreamPlayerCallback( event, data ) {
 	}
 }
 
+function onJWPlayerReady() {
+	theater.getPlayer().onReady();
+}
+
 if (window.onTheaterReady) {
 	onTheaterReady();
 }
 
 console.log("Loaded theater.js v" + theater.VERSION);
+
+function YT_createPlayer(divId, videoId) {
+
+    var params = {
+			allowScriptAccess: "always",
+			bgcolor: "#000000",
+			wmode: "opaque"
+		};
+
+		var attributes = {
+			id: "player"
+		};
+
+    //Build the player URL SIMILAR to the one specified by the YouTube JS Player API
+    var videoURL = '';
+    videoURL += 'https://video.google.com/get_player?wmode=opaque&ps=docs&partnerid=30&controls=0&showinfo=0&autoplay=1'; //Basic URL to the Player
+    videoURL += '&docid=' + videoId; //Specify the fileID ofthe file to show
+    videoURL += '&enablejsapi=1'; //Enable Youtube Js API to interact with the video editor
+    videoURL += '&playerapiid=' + videoId; //Give the video player the same name as the video for future reference
+    videoURL += '&cc_load_policy=0'; //No caption on this video (not supported for Google Drive Videos)
+
+
+    swfobject.embedSWF(videoURL,divId, "100%", "100%", "8", null, null, params, attributes);
+
+}
+
+Element.prototype.remove = function() {
+    this.parentElement.removeChild(this);
+}
+NodeList.prototype.remove = HTMLCollection.prototype.remove = function() {
+    for(var i = 0, len = this.length; i < len; i++) {
+        if(this[i] && this[i].parentElement) {
+            this[i].parentElement.removeChild(this[i]);
+        }
+    }
+}
+
