@@ -324,7 +324,7 @@ function registerPlayer( type, object ) {
 			this.lastStartTime = null;
 			this.videoId = id;
 
-			var url = 'https://youtube.googleapis.com/yva_video?enablejsapi=1&amp;autoplay=1&amp;fs=1&amp;hl=en&amp;modestbranding=1&amp;autohide=1&amp;showinfo=0&amp;controls=0';
+			var url = 'https://youtube.googleapis.com/yva_video?enablejsapi=1&amp;autoplay=1&amp;fs=1&amp;hl=en&amp;modestbranding=1&amp;autohide=1&amp;showinfo=0&amp;controls=0&amp;iv_load_policy=3';
 
 			if ( theater.isCCEnabled() ) {
 				url += "&cc_load_policy=1";
